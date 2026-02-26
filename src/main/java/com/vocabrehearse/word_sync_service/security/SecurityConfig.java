@@ -12,18 +12,31 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Disable for development
+                .cors(Customizer.withDefaults())
+                .csrf(csrf -> csrf.disable()) // Disable CSRF for local API testing
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/h2-console/**").permitAll()
+                        .requestMatchers("/api/v1/words/**").permitAll() // Allow your new file sync
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll() // Allow Swagger
                         .anyRequest().authenticated()
-                )
-                .oauth2Login(Customizer.withDefaults())
-                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin())); // Allow H2 Console
-
-
-
+                );
         return http.build();
     }
+
+//    @Bean
+//    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+//        http
+//                .csrf(csrf -> csrf.disable()) // Disable for development
+//                .authorizeHttpRequests(auth -> auth
+//                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/h2-console/**").permitAll()
+//                        .anyRequest().authenticated()
+//                )
+//                .oauth2Login(Customizer.withDefaults())
+//                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin())); // Allow H2 Console
+//
+//
+//
+//        return http.build();
+//    }
 }
