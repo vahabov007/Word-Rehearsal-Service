@@ -1,22 +1,50 @@
 package com.vocabrehearse.word_sync_service.service;
 
-import lombok.RequiredArgsConstructor;
+import com.vocabrehearse.word_sync_service.model.VocabularyWord;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import tools.jackson.databind.JsonNode;
 
-@Service
-@Slf4j
+import java.util.ArrayList;
+import java.util.List;
+
+@Service @Slf4j
 public class OneNoteSyncService {
 
     private final VocabService vocabService;
+    private final WordImportService wordImportService;
+
     private final WebClient webClient;
 
-    public OneNoteSyncService(WebClient.Builder webClient, VocabService vocabService) {
+    public OneNoteSyncService(WebClient.Builder webClient, VocabService vocabService, WordImportService wordImportService) {
         this.vocabService = vocabService;
         this.webClient = webClient.baseUrl("https://graph.microsoft.com/v1.0").build();
+        this.wordImportService = wordImportService;
 
+    }
+
+    @Transactional
+    public void processHtml(String html) {
+        Document document = Jsoup.parse(html);
+        Elements paragraphs = document.select("p");
+        List<String> readyParagraphs  = new ArrayList<>();
+
+        for (Element paragraph : paragraphs) {
+            String text = paragraph.text();
+            if (text != null && !text.trim().isEmpty()) {
+                readyParagraphs.add(text);
+            }
+        }
+        WordImportService.ParseResult result = wordImportService.parseLines(readyParagraphs);
+        for (VocabularyWord word : result.getWords()) {
+            vocabService.saveStrict(word, result.hasEmptyExampleSlot());
+        }
     }
 
     public void syncMyEnglishWord(String accessToken) {
@@ -47,8 +75,6 @@ public class OneNoteSyncService {
             getAndParseContent(pageId, accessToken);
 
         }
-
-
     }
 
     public void getAndParseContent(String pageId, String accessToken) {
@@ -59,10 +85,7 @@ public class OneNoteSyncService {
                 .bodyToMono(String.class)
                 .block();
 
-        vocabService.processHtml(htmlContent);
-
+        processHtml(htmlContent);
         log.info("The html content successfully fetched and parsed.");
     }
-
-
 }

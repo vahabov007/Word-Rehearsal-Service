@@ -9,49 +9,54 @@ import java.util.regex.Pattern;
 @Service
 public class WordNormalizationService {
 
+    // Common or not regex
     private static final Pattern FREQ =
-            Pattern.compile("\\(([^)]*Common[^)]*)\\)", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("\\(([^)]*Common[^)]*)\\)", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 
-    public void sanitize(VocabularyWord w) {
-        if (w == null || w.getWord() == null) return;
-        String target = w.getWord().trim().toLowerCase(Locale.ROOT);
+    public void normalizeContent(VocabularyWord content) {
+        if (content == null || content.getWord() == null) return;
+        String target = content.getWord().trim().toLowerCase(Locale.ROOT);
 
-        // Definations
-        LinkedHashSet<String> defs = new LinkedHashSet<>();
-        for (String d : safeList(w.getDefinitions())) {
-            String clean = normalize(d);
-            if (clean.isBlank()) continue;
-            clean = stripFrequency(clean);
-            if (clean.toLowerCase(Locale.ROOT).equals(target)) continue;
-            if (!clean.isBlank()) defs.add(clean);}
+        // Definitions
+        LinkedHashSet<String> definitions = new LinkedHashSet<>();
+        for (String definition : getSafeList(content.getDefinitions())) {
+            String cleanedText = cleanText(definition);
+            if (cleanedText.isBlank()) continue;
+            cleanedText = removeFrequencyTag(cleanedText);
+            if (cleanedText.toLowerCase(Locale.ROOT).equals(target)) continue;
+            if (!cleanedText.isBlank()) definitions.add(cleanedText);
+        }
 
-        w.getDefinitions().clear();
-        w.getDefinitions().addAll(defs);
+        // Remove old definitions
+        content.getDefinitions().clear();
+        content.getDefinitions().addAll(definitions);
 
         // Examples
-        LinkedHashSet<String> exs = new LinkedHashSet<>();
-        for (String e : safeList(w.getExamples())) {
-            String clean = normalize(e);
+        LinkedHashSet<String> examples = new LinkedHashSet<>();
+        for (String example : getSafeList(content.getExamples())) {
+            String clean = cleanText(example);
             if (clean.isBlank()) continue;
             if (clean.toLowerCase(Locale.ROOT).equals(target)) continue;
-            exs.add(clean);}
+            examples.add(clean);
+        }
 
-        w.getExamples().clear();
-        w.getExamples().addAll(exs);
+        content.getExamples().clear();
+        content.getExamples().addAll(examples);
     }
 
-    private List<String> safeList(List<String> list) {
+    private List<String> getSafeList(List<String> list) {
         return list == null ? List.of() : list;
     }
 
-    public String normalize(String s) {
-        if (s == null) return "";
-        return s.trim()
+    public String cleanText(String text) {
+        if (text == null) return "";
+        return text.trim()
+                // "\\s+" -> Replaces any sequence of whitespace with a single space.
                 .replaceAll("\\s+", " ")
                 .replaceAll("^[\"'“”]+|[\"'“”]+$", "");
     }
 
-    public String stripFrequency(String definition) {
+    public String removeFrequencyTag(String definition) {
         if (definition == null) return "";
         return FREQ.matcher(definition).replaceAll("").trim();
     }

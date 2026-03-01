@@ -6,17 +6,16 @@ import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
-@Component
-@RequiredArgsConstructor
+@Component @RequiredArgsConstructor
 public class DbDictionaryProvider implements DictionaryProvider {
 
-    private final VocabularyRepository repository;
+    private final VocabularyRepository vocabularyRepository;
 
     @Override
     public Optional<String> findDefinition(String word) {
         if (word == null || word.isBlank()) return Optional.empty();
 
-        return repository.findByWord(word.trim())
+        return vocabularyRepository.findByWord(word.trim())
                 .flatMap(w -> (w.getDefinitions() == null || w.getDefinitions().isEmpty())
                         ? Optional.empty()
                         : Optional.ofNullable(w.getDefinitions().get(0)));
