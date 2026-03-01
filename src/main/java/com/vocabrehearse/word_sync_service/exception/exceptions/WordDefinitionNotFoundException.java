@@ -1,4 +1,4 @@
-package com.vocabrehearse.word_sync_service.exception;
+package com.vocabrehearse.word_sync_service.exception.exceptions;
 
 public class WordDefinitionNotFoundException extends RuntimeException {
     public WordDefinitionNotFoundException(String word) {

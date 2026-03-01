@@ -8,6 +8,7 @@ import com.vocabrehearse.word_sync_service.service.OneNoteSyncService;
 import com.vocabrehearse.word_sync_service.service.VocabService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -38,9 +39,8 @@ public class VocabController {
     }
 
     @GetMapping("/rehearse")
-    public ResponseEntity<Page<VocabularyWord>> getWordsForPractice(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+    public ResponseEntity<Page<VocabularyWord>> getWordsForPractice(@RequestParam(defaultValue = "0") int page,
+                                                                    @RequestParam(defaultValue = "10") int size) {
 
         PageRequest pageRequest = PageRequest.of(page, size);
         Page<VocabularyWord> dueWords = repository.findDueWordsStrictly(pageRequest);
@@ -51,7 +51,7 @@ public class VocabController {
     @PostMapping("/{id}/grade")
     @Operation(summary = "Submit a rehearsal grade via JSON body")
     public ResponseEntity<Void> submitReview(@PathVariable Long id,
-                                             @RequestBody GradeRequest gradeRequest) {
+                                             @Valid @RequestBody GradeRequest gradeRequest) {
         vocabService.processReviewResult(id, gradeRequest.getGrade());
         return ResponseEntity.ok().build();
     }
