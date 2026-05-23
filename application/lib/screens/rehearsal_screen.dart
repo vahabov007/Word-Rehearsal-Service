@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
+
 import '../models/vocab_word.dart';
 import '../services/api_service.dart';
+import '../widgets/multi_meaning_card.dart';
+import '../widgets/review_feedback_panel.dart';
 
 class RehearsalScreen extends StatefulWidget {
   final List<VocabWord> words;
-  const RehearsalScreen({super.key, required this.words});
+  final ApiService apiService;
+
+  const RehearsalScreen({
+    super.key,
+    required this.words,
+    required this.apiService,
+  });
 
   @override
   State<RehearsalScreen> createState() => _RehearsalScreenState();
@@ -15,7 +24,12 @@ class _RehearsalScreenState extends State<RehearsalScreen> {
   bool _showDetails = false;
   bool _submitting = false;
 
-  final Map<int, List<String>> _history = {1: [], 2: [], 3: [], 4: [], 5: []};
+  final Map<int, List<String>> _history = {
+    1: [],
+    2: [],
+    3: [],
+    5: [],
+  };
 
   VocabWord get _current => widget.words[_index];
 
@@ -24,14 +38,13 @@ class _RehearsalScreenState extends State<RehearsalScreen> {
     setState(() => _submitting = true);
 
     try {
-      await ApiService.submitGrade(word.id, grade);
-      _history[grade]!.add(word.word);
+      await widget.apiService.submitGrade(word.id, grade);
+      _history.putIfAbsent(grade, () => []).add(word.word);
     } catch (_) {
-      // Still record locally even if backend fails
-      _history[grade]!.add(word.word);
+      _history.putIfAbsent(grade, () => []).add(word.word);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Failed to submit grade. Saved locally for session.")),
+          const SnackBar(content: Text('Backend did not accept the grade. Saved locally for this session.')),
         );
       }
     } finally {
@@ -50,200 +63,164 @@ class _RehearsalScreenState extends State<RehearsalScreen> {
   }
 
   void _showSummary() {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isDismissible: false,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text("Session Complete", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            ..._history.entries.where((e) => e.value.isNotEmpty).map((e) {
-              return ListTile(
-                leading: CircleAvatar(child: Text("${e.key}")),
-                title: Text("Grade ${e.key}"),
-                subtitle: Text(e.value.join(", ")),
-              );
-            }),
-            const SizedBox(height: 10),
-            Row(
+      showDragHandle: true,
+      builder: (context) {
+        final entries = _history.entries.where((entry) => entry.value.isNotEmpty).toList();
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      setState(() {
-                        _index = 0;
-                        _showDetails = false;
-                        _history.forEach((k, v) => v.clear());
-                      });
-                    },
-                    child: const Text("Restart"),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.pop(context);
-                    },
-                    child: const Text("Done"),
-                  ),
+                Text('Session complete', style: Theme.of(context).textTheme.headlineSmall),
+                const SizedBox(height: 10),
+                if (entries.isEmpty)
+                  const Text('No grades were recorded.')
+                else
+                  ...entries.map((entry) {
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(child: Text('${entry.key}')),
+                      title: Text(_gradeLabel(entry.key)),
+                      subtitle: Text(entry.value.join(', '), maxLines: 2, overflow: TextOverflow.ellipsis),
+                    );
+                  }),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        setState(() {
+                          _index = 0;
+                          _showDetails = false;
+                          _history.forEach((_, value) => value.clear());
+                        });
+                      },
+                      icon: const Icon(Icons.restart_alt_rounded),
+                      label: const Text('Restart'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.pop(context);
+                      },
+                      icon: const Icon(Icons.done_rounded),
+                      label: const Text('Done'),
+                    ),
+                  ],
                 ),
               ],
-            )
-          ],
-        ),
-      ),
+            ),
+          ),
+        );
+      },
     );
+  }
+
+  void _showSynonymLookup(String synonym) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Lookup cue selected: $synonym')),
+    );
+  }
+
+  String _gradeLabel(int grade) {
+    return switch (grade) {
+      1 => 'Again',
+      2 => 'Hard',
+      3 => 'Good',
+      5 => 'Easy',
+      _ => 'Grade $grade',
+    };
   }
 
   @override
   Widget build(BuildContext context) {
-    final word = _current;
     final progress = (_index + 1) / widget.words.length;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Rehearsal ${_index + 1}/${widget.words.length}"),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            LinearProgressIndicator(value: progress),
-            const SizedBox(height: 18),
-
-            Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Text(word.word, style: const TextStyle(fontSize: 34, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 10),
-                    Text(
-                      _showDetails ? "Check details and grade yourself." : "Try to recall the meaning first.",
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: _showDetails ? _details(word) : _recallHint(),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            if (!_showDetails)
-              FilledButton.icon(
-                onPressed: () => setState(() => _showDetails = true),
-                icon: const Icon(Icons.visibility),
-                label: const Text("Show details"),
-              )
-            else
-              _gradingRow(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _recallHint() => const Center(
-        key: ValueKey("recall"),
-        child: Text("Recall meaning…", style: TextStyle(fontSize: 18)),
-      );
-
-  Widget _details(VocabWord w) {
-    return SingleChildScrollView(
-      key: const ValueKey("details"),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("Definitions", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 6),
-          ...w.definitions.map((d) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("•  "),
-                    Expanded(child: Text(d)),
-                  ],
-                ),
-              )),
-          if (w.synonyms != null) _infoBox("Synonyms", w.synonyms!),
-          if (w.antonyms != null) _infoBox("Antonyms", w.antonyms!),
-          const SizedBox(height: 14),
-          const Text("Examples", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 6),
-          ...w.examples.map((e) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Text("“$e”", style: const TextStyle(fontStyle: FontStyle.italic)),
-              )),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoBox(String label, String value) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: cs.primary.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          Text("$label: ", style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold)),
-          Expanded(child: Text(value)),
-        ],
-      ),
-    );
-  }
-
-  Widget _gradingRow() {
-    return IgnorePointer(
-      ignoring: _submitting,
-      child: Opacity(
-        opacity: _submitting ? 0.6 : 1,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [1, 2, 3, 4, 5].map((g) => _gradeButton(g)).toList(),
-        ),
-      ),
-    );
-  }
-
-  Widget _gradeButton(int grade) {
-    final colors = [Colors.red, Colors.orange, Colors.amber, Colors.lightGreen, Colors.green];
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: ElevatedButton(
-          onPressed: () => _grade(grade),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: colors[grade - 1],
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: Text('Review ${_index + 1}/${widget.words.length}'),
+        actions: [
+          IconButton(
+            onPressed: _submitting ? null : () => setState(() => _showDetails = !_showDetails),
+            icon: Icon(_showDetails ? Icons.visibility_off_rounded : Icons.visibility_rounded),
+            tooltip: _showDetails ? 'Hide details' : 'Reveal details',
           ),
-          child: Text("$grade"),
+        ],
+      ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 8,
+                      backgroundColor: colorScheme.surfaceContainerHighest,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(18),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: constraints.maxHeight - 156),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 720),
+                          child: MultiMeaningCard(
+                            word: _current,
+                            isRevealed: _showDetails,
+                            onReveal: () => setState(() => _showDetails = true),
+                            onSynonymSelected: _showSynonymLookup,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  child: _showDetails
+                      ? Padding(
+                          key: const ValueKey('review-panel'),
+                          padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 720),
+                            child: ReviewFeedbackPanel(
+                              isSubmitting: _submitting,
+                              onGradeSelected: _grade,
+                            ),
+                          ),
+                        )
+                      : Padding(
+                          key: const ValueKey('reveal-button'),
+                          padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.icon(
+                              onPressed: () => setState(() => _showDetails = true),
+                              icon: const Icon(Icons.visibility_rounded),
+                              label: const Text('Reveal details'),
+                            ),
+                          ),
+                        ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

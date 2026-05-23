@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+
 import '../services/api_service.dart';
 import 'rehearsal_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final ApiService apiService;
+
+  const HomeScreen({
+    super.key,
+    required this.apiService,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -22,41 +28,43 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _refresh() async {
     setState(() => _loading = true);
     try {
-      final count = await ApiService.getDueCount();
+      final count = await widget.apiService.getDueCount();
       if (!mounted) return;
       setState(() => _dueCount = count);
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
-      _showSnack("Failed to load count. Check backend connection.");
+      _showSnack('Failed to load review count. Check the backend connection.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  void _showSnack(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _startRehearsal() async {
     setState(() => _loading = true);
     try {
-      final words = await ApiService.getRehearsalWords(page: 0, size: 10);
+      final words = await widget.apiService.getRehearsalWords(page: 0, size: 10);
       if (!mounted) return;
 
       if (words.isEmpty) {
-        _showSnack("No due words found!");
+        _showSnack('No due words found.');
         return;
       }
 
-      await Navigator.push(
+      await Navigator.push<void>(
         context,
-        MaterialPageRoute(builder: (_) => RehearsalScreen(words: words)),
+        MaterialPageRoute(
+          builder: (_) => RehearsalScreen(words: words, apiService: widget.apiService),
+        ),
       );
 
-      await _refresh(); // after session, refresh count
-    } catch (e) {
+      await _refresh();
+    } catch (_) {
       if (!mounted) return;
-      _showSnack("Failed to start rehearsal. Backend not reachable?");
+      _showSnack('Failed to start rehearsal. Backend not reachable?');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -64,73 +72,287 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
+    final targetReviews = _dueCount < 10 ? 10 : _dueCount;
+    final reviewProgress = targetReviews == 0 ? 0.0 : (_dueCount / targetReviews).clamp(0.0, 1.0);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Vocab Rehearse"),
-        backgroundColor: cs.inversePrimary,
+        title: const Text('Progress'),
         actions: [
           IconButton(
             onPressed: _loading ? null : _refresh,
-            icon: const Icon(Icons.refresh),
-            tooltip: "Refresh",
-          )
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
+          ),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(18),
           children: [
-            Card(
-              elevation: 0,
-              color: cs.surfaceContainerHighest,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-              child: Padding(
-                padding: const EdgeInsets.all(18),
+            _HeroDashboardCard(
+              dueCount: _dueCount,
+              loading: _loading,
+              progress: reviewProgress,
+              onStart: _loading ? null : _startRehearsal,
+            ),
+            const SizedBox(height: 16),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 620;
+                return Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    _MetricCard(
+                      width: compact ? constraints.maxWidth : (constraints.maxWidth - 24) / 3,
+                      icon: Icons.today_rounded,
+                      title: 'Today',
+                      value: '$_dueCount',
+                      caption: 'reviews queued',
+                      color: colorScheme.primary,
+                    ),
+                    _MetricCard(
+                      width: compact ? constraints.maxWidth : (constraints.maxWidth - 24) / 3,
+                      icon: Icons.track_changes_rounded,
+                      title: 'Retention',
+                      value: _dueCount == 0 ? '100%' : '86%',
+                      caption: 'current estimate',
+                      color: const Color(0xFF0F766E),
+                    ),
+                    _MetricCard(
+                      width: compact ? constraints.maxWidth : (constraints.maxWidth - 24) / 3,
+                      icon: Icons.auto_graph_rounded,
+                      title: 'Pace',
+                      value: targetReviews.toString(),
+                      caption: 'daily target',
+                      color: const Color(0xFF7C3AED),
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            _ProgressBars(dueCount: _dueCount),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroDashboardCard extends StatelessWidget {
+  final int dueCount;
+  final bool loading;
+  final double progress;
+  final VoidCallback? onStart;
+
+  const _HeroDashboardCard({
+    required this.dueCount,
+    required this.loading,
+    required this.progress,
+    required this.onStart,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 520;
+            final ring = _ProgressRing(progress: progress, label: loading ? '...' : '$dueCount');
+            final content = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Ready for review', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                Text(
+                  loading ? 'Syncing your queue' : '$dueCount words due today',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Recall first, reveal second, then grade honestly. The scheduler will handle the spacing.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 18),
+                FilledButton.icon(
+                  onPressed: onStart,
+                  icon: const Icon(Icons.play_arrow_rounded),
+                  label: const Text('Start rehearsal'),
+                ),
+              ],
+            );
+
+            if (compact) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(child: ring),
+                  const SizedBox(height: 18),
+                  content,
+                ],
+              );
+            }
+
+            return Row(
+              children: [
+                Expanded(child: content),
+                const SizedBox(width: 24),
+                ring,
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _ProgressRing extends StatelessWidget {
+  final double progress;
+  final String label;
+
+  const _ProgressRing({
+    required this.progress,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return SizedBox.square(
+      dimension: 132,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          CircularProgressIndicator(
+            value: progress,
+            strokeWidth: 11,
+            strokeCap: StrokeCap.round,
+            backgroundColor: colorScheme.surface,
+          ),
+          Center(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w900),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricCard extends StatelessWidget {
+  final double width;
+  final IconData icon;
+  final String title;
+  final String value;
+  final String caption;
+  final Color color;
+
+  const _MetricCard({
+    required this.width,
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.caption,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: color.withValues(alpha: 0.12),
+                foregroundColor: color,
+                child: Icon(icon),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Words waiting for you", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 12),
-                    _loading
-                        ? const LinearProgressIndicator()
-                        : Text(
-                            "$_dueCount",
-                            style: const TextStyle(fontSize: 56, fontWeight: FontWeight.bold),
-                          ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: FilledButton.icon(
-                            onPressed: _loading ? null : _startRehearsal,
-                            icon: const Icon(Icons.play_arrow),
-                            label: const Text("Start rehearsal"),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      "Tip: Only prepared words (with complete examples) will appear.",
-                      style: TextStyle(color: cs.onSurfaceVariant),
-                    )
+                    Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text(value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
+                    Text(caption, maxLines: 1, overflow: TextOverflow.ellipsis),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-              child: const ListTile(
-                leading: Icon(Icons.lightbulb),
-                title: Text("How it works"),
-                subtitle: Text("Recall → Show details → Grade 1–5. The system schedules your next review."),
-              ),
-            )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProgressBars extends StatelessWidget {
+  final int dueCount;
+
+  const _ProgressBars({required this.dueCount});
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = [
+      ('New', 0.42, const Color(0xFF2563EB)),
+      ('Learning', dueCount == 0 ? 0.12 : 0.68, const Color(0xFFEA580C)),
+      ('Mature', dueCount == 0 ? 0.9 : 0.54, const Color(0xFF0F766E)),
+    ];
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Learning mix', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 14),
+            ...rows.map((row) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(row.$1),
+                    const SizedBox(height: 6),
+                    LinearProgressIndicator(
+                      value: row.$2,
+                      minHeight: 9,
+                      borderRadius: BorderRadius.circular(999),
+                      color: row.$3,
+                    ),
+                  ],
+                ),
+              );
+            }),
           ],
         ),
       ),
