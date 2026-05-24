@@ -1,30 +1,60 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
+import 'package:application/models/vocab_word.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:application/main.dart';
-
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const VocabApp());
+  test('maps multi-meaning payload safely', () {
+    final word = VocabWord.fromJson({
+      'id': 7,
+      'word': 'Pitch',
+      'meanings': [
+        {
+          'partOfSpeech': 'noun',
+          'definition': 'The level of a sound.',
+          'frequency': 'Very Common',
+          'synonyms': ['tone', null, 'key'],
+        },
+        {
+          'partOfSpeech': 'verb',
+          'definition': 'To throw something.',
+          'frequency': null,
+          'synonyms': 'throw, toss',
+        },
+      ],
+      'examples': ['Dogs can hear a higher pitch.'],
+      'ready': true,
+    });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(word.word, 'Pitch');
+    expect(word.meanings, hasLength(2));
+    expect(word.meanings.first.synonyms, ['tone', 'key']);
+    expect(word.meanings.last.frequency, 'Common');
+    expect(word.examples.single, 'Dogs can hear a higher pitch.');
+    expect(word.hasValidExamples, isTrue);
+    expect(word.isReady, isTrue);
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  test('maps legacy flat definitions into meanings', () {
+    final word = VocabWord.fromJson({
+      'word': 'Draft',
+      'definitions': ['A preliminary version.'],
+      'synonyms': 'outline, sketch',
+      'usageFrequency': 'Common',
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(word.meanings.single.definition, 'A preliminary version.');
+    expect(word.meanings.single.synonyms, ['outline', 'sketch']);
+    expect(word.previewDefinition, 'A preliminary version.');
+    expect(word.hasValidExamples, isFalse);
+  });
+
+  test('drops null and empty example slots during parsing', () {
+    final word = VocabWord.fromJson({
+      'word': 'Unprepared',
+      'definitions': ['Not ready yet.'],
+      'examples': [null, '', '   '],
+    });
+
+    expect(word.examples, isEmpty);
+    expect(word.hasValidExamples, isFalse);
   });
 }

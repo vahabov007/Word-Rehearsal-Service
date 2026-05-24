@@ -70,39 +70,52 @@ class ReviewFeedbackPanel extends StatelessWidget {
             return Wrap(
               spacing: 10,
               runSpacing: 10,
-              children: actions.map((action) {
-                final rawWidth = compact
-                    ? (constraints.maxWidth - 10) / 2
-                    : (constraints.maxWidth - 30) / actions.length;
-                final width = constraints.maxWidth < 130
-                    ? constraints.maxWidth
-                    : rawWidth.clamp(130.0, constraints.maxWidth).toDouble();
-                return SizedBox(
-                  width: width,
-                  child: FilledButton.tonalIcon(
-                    onPressed: () => onGradeSelected(action.grade),
-                    icon: Icon(action.icon, color: action.color),
-                    label: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(action.label, maxLines: 1, overflow: TextOverflow.ellipsis),
-                        Text(
-                          action.helper,
-                          style: Theme.of(context).textTheme.labelSmall,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+              children: actions
+                  .map((action) {
+                    final rawWidth = compact
+                        ? (constraints.maxWidth - 10) / 2
+                        : (constraints.maxWidth - 30) / actions.length;
+                    final width = constraints.maxWidth < 130
+                        ? constraints.maxWidth
+                        : rawWidth
+                              .clamp(130.0, constraints.maxWidth)
+                              .toDouble();
+                    return SizedBox(
+                      width: width,
+                      child: FilledButton.tonalIcon(
+                        onPressed: () => onGradeSelected(action.grade),
+                        icon: Icon(action.icon, color: action.color),
+                        label: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              action.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              action.helper,
+                              style: Theme.of(context).textTheme.labelSmall,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    style: FilledButton.styleFrom(
-                      alignment: Alignment.centerLeft,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                  ),
-                );
-              }).toList(growable: false),
+                        style: FilledButton.styleFrom(
+                          alignment: Alignment.centerLeft,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
+                    );
+                  })
+                  .toList(growable: false),
             );
           },
         ),

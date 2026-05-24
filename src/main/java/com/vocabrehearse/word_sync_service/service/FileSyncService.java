@@ -27,7 +27,7 @@ public class FileSyncService {
 
         WordImportService.ParseResult parseResult = wordImportService.parseLines(lines);
         for (VocabularyWord word : parseResult.getWords()) {
-            vocabService.saveStrict(word, false);
+            vocabService.saveStrict(word);
         }
     }
 }

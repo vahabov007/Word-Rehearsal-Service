@@ -17,7 +17,6 @@ public class WordImportService {
         List<VocabularyWord> words = new ArrayList<>();
         VocabularyWord current = null;
         boolean parsingParagraph = false;
-        boolean hasEmptyExampleSlot = false;
 
         for (String raw : lines) {
             String text = raw == null ? "" : raw.trim();
@@ -32,7 +31,6 @@ public class WordImportService {
                 current.setWord(wordParsingService.extractWordFromHeader(text).orElseThrow());
                 initDefaults(current);
                 parsingParagraph = false;
-                hasEmptyExampleSlot = false;
                 continue;
             }
             if (current == null) continue;
@@ -62,7 +60,7 @@ public class WordImportService {
             if (exampleText != null) {
                 parsingParagraph = false;
                 if (exampleText.isBlank()) {
-                    hasEmptyExampleSlot = true;
+                    current.setHasEmptyExampleSlot(true);
                 } else {
                     current.getExamples().add(exampleText);
                 }
@@ -81,7 +79,7 @@ public class WordImportService {
         if (current != null) {
             words.add(current);
         }
-        return new ParseResult(words, hasEmptyExampleSlot);
+        return new ParseResult(words);
     }
 
     private void initDefaults(VocabularyWord vocabularyWord) {
@@ -95,15 +93,9 @@ public class WordImportService {
     public static class ParseResult {
         @Getter
         private final List<VocabularyWord> words;
-        private final boolean hasEmptyExampleSlot;
 
-        public ParseResult(List<VocabularyWord> words, boolean hasEmptyExampleSlot) {
+        public ParseResult(List<VocabularyWord> words) {
             this.words = words;
-            this.hasEmptyExampleSlot = hasEmptyExampleSlot;
-        }
-
-        public boolean hasEmptyExampleSlot() {
-            return hasEmptyExampleSlot;
         }
     }
 }

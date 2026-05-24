@@ -42,24 +42,36 @@ class VocabWord {
   }
 
   List<String> get definitions {
-    return meanings.map((meaning) => meaning.definition).where((text) => text.isNotEmpty).toList();
+    return meanings
+        .map((meaning) => meaning.definition)
+        .where((text) => text.isNotEmpty)
+        .toList();
   }
 
   String? get synonyms {
-    final values = meanings.expand((meaning) => meaning.synonyms).toSet().toList();
+    final values = meanings
+        .expand((meaning) => meaning.synonyms)
+        .toSet()
+        .toList();
     return values.isEmpty ? null : values.join(', ');
   }
 
-  String? get usageFrequency => meanings.isEmpty ? null : meanings.first.frequency;
+  String? get usageFrequency =>
+      meanings.isEmpty ? null : meanings.first.frequency;
 
   String get primaryPartOfSpeech {
     if (meanings.isEmpty) return 'General';
     return meanings.first.partOfSpeech;
   }
 
+  bool get hasValidExamples =>
+      examples.any((example) => example.trim().isNotEmpty);
+
   String get previewDefinition {
     final firstDefinition = definitions.firstOrNull;
-    return firstDefinition == null || firstDefinition.isEmpty ? 'No definition available yet.' : firstDefinition;
+    return firstDefinition == null || firstDefinition.isEmpty
+        ? 'No definition available yet.'
+        : firstDefinition;
   }
 
   Map<String, dynamic> toJson() {
@@ -80,19 +92,22 @@ class VocabWord {
     required List<String> legacySynonyms,
   }) {
     if (payload is List && payload.isNotEmpty) {
-      return payload.map((item) {
-        if (item is Map<String, dynamic>) {
-          return WordMeaning.fromJson(item);
-        }
-        if (item is Map) {
-          return WordMeaning.fromJson(Map<String, dynamic>.from(item));
-        }
-        return WordMeaning.fromLegacyDefinition(
-          definition: item.toString(),
-          frequency: usageFrequency,
-          synonyms: legacySynonyms,
-        );
-      }).where((meaning) => meaning.definition.isNotEmpty).toList(growable: false);
+      return payload
+          .map((item) {
+            if (item is Map<String, dynamic>) {
+              return WordMeaning.fromJson(item);
+            }
+            if (item is Map) {
+              return WordMeaning.fromJson(Map<String, dynamic>.from(item));
+            }
+            return WordMeaning.fromLegacyDefinition(
+              definition: item.toString(),
+              frequency: usageFrequency,
+              synonyms: legacySynonyms,
+            );
+          })
+          .where((meaning) => meaning.definition.isNotEmpty)
+          .toList(growable: false);
     }
 
     final singleDefinition = _cleanOptional(payload);
@@ -126,6 +141,7 @@ class VocabWord {
     if (value == null) return const [];
     if (value is List) {
       return value
+          .where((item) => item != null)
           .map((item) => item.toString().trim())
           .where((item) => item.isNotEmpty && item.toLowerCase() != 'undefined')
           .toSet()

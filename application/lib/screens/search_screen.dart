@@ -10,10 +10,7 @@ import 'word_details_screen.dart';
 class SearchScreen extends StatefulWidget {
   final ApiService apiService;
 
-  const SearchScreen({
-    super.key,
-    required this.apiService,
-  });
+  const SearchScreen({super.key, required this.apiService});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -108,14 +105,19 @@ class _SearchScreenState extends State<SearchScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(_error!, style: TextStyle(color: colorScheme.error)),
+                  child: Text(
+                    _error!,
+                    style: TextStyle(color: colorScheme.error),
+                  ),
                 ),
               ),
             Expanded(
               child: _results.isEmpty
                   ? Center(
                       child: Text(
-                        _controller.text.trim().isEmpty ? 'Search results will appear here.' : 'No matching words found.',
+                        _controller.text.trim().isEmpty
+                            ? 'Search results will appear here.'
+                            : 'No matching words found.',
                         style: TextStyle(color: colorScheme.onSurfaceVariant),
                       ),
                     )
@@ -129,7 +131,10 @@ class _SearchScreenState extends State<SearchScreen> {
                           onTap: () {
                             Navigator.push<void>(
                               context,
-                              MaterialPageRoute(builder: (_) => WordDetailsScreen(word: _results[index])),
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    WordDetailsScreen(word: _results[index]),
+                              ),
                             );
                           },
                         );
@@ -147,10 +152,7 @@ class _SearchResultTile extends StatelessWidget {
   final VocabWord word;
   final VoidCallback onTap;
 
-  const _SearchResultTile({
-    required this.word,
-    required this.onTap,
-  });
+  const _SearchResultTile({required this.word, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +176,8 @@ class _SearchResultTile extends StatelessWidget {
                         Expanded(
                           child: Text(
                             word.word,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w800),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -198,8 +201,12 @@ class _SearchResultTile extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Icon(
-                word.isReady ? Icons.check_circle_rounded : Icons.edit_note_rounded,
-                color: word.isReady ? const Color(0xFF16A34A) : const Color(0xFFEA580C),
+                word.isReady
+                    ? Icons.check_circle_rounded
+                    : Icons.edit_note_rounded,
+                color: word.isReady
+                    ? const Color(0xFF16A34A)
+                    : const Color(0xFFEA580C),
               ),
             ],
           ),

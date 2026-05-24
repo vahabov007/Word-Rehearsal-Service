@@ -13,7 +13,9 @@ class SettingsScreen extends StatelessWidget {
         children: [
           Card(
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
             child: ListTile(
               leading: const Icon(Icons.link),
               title: const Text("Backend base URL"),

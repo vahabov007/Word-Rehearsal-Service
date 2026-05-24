@@ -36,7 +36,9 @@ class MultiMeaningCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.72)),
+            border: Border.all(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.72),
+            ),
             boxShadow: [
               BoxShadow(
                 color: colorScheme.shadow.withValues(alpha: 0.08),
@@ -78,10 +80,7 @@ class _WordHeader extends StatelessWidget {
   final VocabWord word;
   final bool isRevealed;
 
-  const _WordHeader({
-    required this.word,
-    required this.isRevealed,
-  });
+  const _WordHeader({required this.word, required this.isRevealed});
 
   @override
   Widget build(BuildContext context) {
@@ -96,9 +95,9 @@ class _WordHeader extends StatelessWidget {
               child: Text(
                 word.word,
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      fontWeight: FontWeight.w900,
-                      height: 1.04,
-                    ),
+                  fontWeight: FontWeight.w900,
+                  height: 1.04,
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -113,11 +112,13 @@ class _WordHeader extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Text(
-          isRevealed ? 'Meanings, examples, and cue words' : 'Tap the card when your recall is ready',
+          isRevealed
+              ? 'Meanings, examples, and cue words'
+              : 'Tap the card when your recall is ready',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
-              ),
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );
@@ -148,7 +149,10 @@ class _RecallPrompt extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   'Reveal answer',
-                  style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ],
             ),
@@ -178,7 +182,10 @@ class _MeaningDetails extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (meanings.isEmpty)
-            Text('No definition available yet.', style: Theme.of(context).textTheme.bodyLarge)
+            Text(
+              'No definition available yet.',
+              style: Theme.of(context).textTheme.bodyLarge,
+            )
           else
             ...meanings.indexed.map((entry) {
               return _MeaningTile(
@@ -222,21 +229,31 @@ class _MeaningTile extends StatelessWidget {
           initiallyExpanded: initiallyExpanded,
           tilePadding: const EdgeInsets.symmetric(horizontal: 12),
           childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 14),
-          collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          collapsedShape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           backgroundColor: colorScheme.surface.withValues(alpha: 0.62),
           collapsedBackgroundColor: colorScheme.surface.withValues(alpha: 0.46),
           leading: CircleAvatar(
             radius: 16,
             backgroundColor: colorScheme.primaryContainer,
-            child: Text('$index', style: TextStyle(color: colorScheme.onPrimaryContainer)),
+            child: Text(
+              '$index',
+              style: TextStyle(color: colorScheme.onPrimaryContainer),
+            ),
           ),
           title: Wrap(
             spacing: 8,
             runSpacing: 8,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              VocabBadge(label: meaning.partOfSpeech, color: colorScheme.primary),
+              VocabBadge(
+                label: meaning.partOfSpeech,
+                color: colorScheme.primary,
+              ),
               VocabBadge(
                 label: meaning.frequency,
                 color: _frequencyColor(meaning.frequency),
@@ -249,7 +266,9 @@ class _MeaningTile extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: Text(
                 meaning.definition,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.38),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(height: 1.38),
               ),
             ),
             if (meaning.synonyms.isNotEmpty) ...[
@@ -287,7 +306,9 @@ class _ExamplesPanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.secondaryContainer.withValues(alpha: 0.28),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: colorScheme.secondary.withValues(alpha: 0.16)),
+        border: Border.all(
+          color: colorScheme.secondary.withValues(alpha: 0.16),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -298,7 +319,10 @@ class _ExamplesPanel extends StatelessWidget {
               children: [
                 Icon(Icons.format_quote_rounded, color: colorScheme.secondary),
                 const SizedBox(width: 8),
-                Text('Examples', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'Examples',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
               ],
             ),
             const SizedBox(height: 10),
@@ -308,10 +332,10 @@ class _ExamplesPanel extends StatelessWidget {
                 child: Text(
                   '"$example"',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        fontStyle: FontStyle.italic,
-                        height: 1.32,
-                      ),
+                    color: colorScheme.onSurfaceVariant,
+                    fontStyle: FontStyle.italic,
+                    height: 1.32,
+                  ),
                 ),
               );
             }),

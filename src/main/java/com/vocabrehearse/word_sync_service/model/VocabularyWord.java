@@ -60,11 +60,25 @@ public class VocabularyWord {
     @Column(name = "is_ready")
     private boolean isReady = true;
 
+    @Transient
+    private boolean hasEmptyExampleSlot = false;
+
     public String getSynonyms() {
         return synonyms == null ? "Undefined" : synonyms;
     }
 
     public String getUsageFrequency() {
         return usageFrequency == null ? "Undefined" : usageFrequency;
+    }
+
+    public boolean hasValidExamples() {
+        if (examples == null || examples.isEmpty()) {
+            return false;
+        }
+        return examples.stream().anyMatch(example -> example != null && !example.isBlank());
+    }
+
+    public boolean isPreparedForExam() {
+        return isReady && !hasEmptyExampleSlot && hasValidExamples();
     }
 }

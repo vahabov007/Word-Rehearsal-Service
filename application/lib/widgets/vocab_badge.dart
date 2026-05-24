@@ -14,10 +14,9 @@ class VocabBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: color,
-          fontWeight: FontWeight.w800,
-        );
+    final textStyle = Theme.of(
+      context,
+    ).textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.w800);
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -34,7 +33,13 @@ class VocabBadge extends StatelessWidget {
               Icon(icon, size: 14, color: color),
               const SizedBox(width: 5),
             ],
-            Flexible(child: Text(label, style: textStyle, overflow: TextOverflow.ellipsis)),
+            Flexible(
+              child: Text(
+                label,
+                style: textStyle,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
       ),

@@ -28,7 +28,7 @@ public class VocabService {
     private static final int MIN_PASSING_GRADE = 3;
 
     public List<VocabularyWord> findWordByText(String query) {
-        return vocabularyRepository.findByWordContainingIgnoreCase(query);
+        return vocabularyRepository.findPreparedByWordContainingIgnoreCase(query);
     }
 
     @Transactional
@@ -45,7 +45,7 @@ public class VocabService {
     }
 
     @Transactional
-    public void saveStrict(VocabularyWord vocabularyWord, boolean hasEmptyExampleSlot) {
+    public void saveStrict(VocabularyWord vocabularyWord) {
         if (vocabularyWord == null || vocabularyWord.getWord() == null) return;
         wordNormalizationService.normalizeContent(vocabularyWord);
 
@@ -54,8 +54,7 @@ public class VocabService {
             vocabularyWord.getDefinitions().add(fallback);
         }
 
-        boolean ready = !(hasEmptyExampleSlot || vocabularyWord.getExamples().isEmpty());
-        vocabularyWord.setReady(ready);
+        vocabularyWord.setReady(vocabularyWord.isPreparedForExam());
 
         vocabularyRepository.findByWord(vocabularyWord.getWord())
                 .ifPresentOrElse(existing -> {

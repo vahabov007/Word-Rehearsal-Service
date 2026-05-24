@@ -43,7 +43,7 @@ public class OneNoteSyncService {
         }
         WordImportService.ParseResult result = wordImportService.parseLines(readyParagraphs);
         for (VocabularyWord word : result.getWords()) {
-            vocabService.saveStrict(word, result.hasEmptyExampleSlot());
+            vocabService.saveStrict(word);
         }
     }
 

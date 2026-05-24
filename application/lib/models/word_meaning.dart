@@ -60,6 +60,7 @@ class WordMeaning {
     if (value == null) return const [];
     if (value is List) {
       return value
+          .where((item) => item != null)
           .map((item) => item.toString().trim())
           .where((item) => item.isNotEmpty && item.toLowerCase() != 'undefined')
           .toSet()

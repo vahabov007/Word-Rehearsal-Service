@@ -7,10 +7,7 @@ import '../widgets/vocab_badge.dart';
 class WordDetailsScreen extends StatelessWidget {
   final VocabWord word;
 
-  const WordDetailsScreen({
-    super.key,
-    required this.word,
-  });
+  const WordDetailsScreen({super.key, required this.word});
 
   @override
   Widget build(BuildContext context) {
@@ -37,12 +34,17 @@ class WordDetailsScreen extends StatelessWidget {
                   children: [
                     Text(
                       word.word,
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900),
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(fontWeight: FontWeight.w900),
                     ),
                     VocabBadge(
                       label: word.isReady ? 'Ready' : 'Draft',
-                      color: word.isReady ? const Color(0xFF0F766E) : const Color(0xFFEA580C),
-                      icon: word.isReady ? Icons.check_rounded : Icons.edit_rounded,
+                      color: word.isReady
+                          ? const Color(0xFF0F766E)
+                          : const Color(0xFFEA580C),
+                      icon: word.isReady
+                          ? Icons.check_rounded
+                          : Icons.edit_rounded,
                     ),
                     VocabBadge(
                       label: '${word.meanings.length} meanings',

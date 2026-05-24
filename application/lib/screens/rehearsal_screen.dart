@@ -24,12 +24,7 @@ class _RehearsalScreenState extends State<RehearsalScreen> {
   bool _showDetails = false;
   bool _submitting = false;
 
-  final Map<int, List<String>> _history = {
-    1: [],
-    2: [],
-    3: [],
-    5: [],
-  };
+  final Map<int, List<String>> _history = {1: [], 2: [], 3: [], 5: []};
 
   VocabWord get _current => widget.words[_index];
 
@@ -44,13 +39,20 @@ class _RehearsalScreenState extends State<RehearsalScreen> {
       _history.putIfAbsent(grade, () => []).add(word.word);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Backend did not accept the grade. Saved locally for this session.')),
+          const SnackBar(
+            content: Text(
+              'Backend did not accept the grade. Saved locally for this session.',
+            ),
+          ),
         );
       }
     } finally {
-      if (!mounted) return;
-      setState(() => _submitting = false);
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
     }
+
+    if (!mounted) return;
 
     if (_index < widget.words.length - 1) {
       setState(() {
@@ -68,7 +70,9 @@ class _RehearsalScreenState extends State<RehearsalScreen> {
       isDismissible: false,
       showDragHandle: true,
       builder: (context) {
-        final entries = _history.entries.where((entry) => entry.value.isNotEmpty).toList();
+        final entries = _history.entries
+            .where((entry) => entry.value.isNotEmpty)
+            .toList();
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
@@ -76,7 +80,10 @@ class _RehearsalScreenState extends State<RehearsalScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Session complete', style: Theme.of(context).textTheme.headlineSmall),
+                Text(
+                  'Session complete',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
                 const SizedBox(height: 10),
                 if (entries.isEmpty)
                   const Text('No grades were recorded.')
@@ -86,7 +93,11 @@ class _RehearsalScreenState extends State<RehearsalScreen> {
                       contentPadding: EdgeInsets.zero,
                       leading: CircleAvatar(child: Text('${entry.key}')),
                       title: Text(_gradeLabel(entry.key)),
-                      subtitle: Text(entry.value.join(', '), maxLines: 2, overflow: TextOverflow.ellipsis),
+                      subtitle: Text(
+                        entry.value.join(', '),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     );
                   }),
                 const SizedBox(height: 10),
@@ -125,9 +136,9 @@ class _RehearsalScreenState extends State<RehearsalScreen> {
   }
 
   void _showSynonymLookup(String synonym) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Lookup cue selected: $synonym')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Lookup cue selected: $synonym')));
   }
 
   String _gradeLabel(int grade) {
@@ -150,8 +161,14 @@ class _RehearsalScreenState extends State<RehearsalScreen> {
         title: Text('Review ${_index + 1}/${widget.words.length}'),
         actions: [
           IconButton(
-            onPressed: _submitting ? null : () => setState(() => _showDetails = !_showDetails),
-            icon: Icon(_showDetails ? Icons.visibility_off_rounded : Icons.visibility_rounded),
+            onPressed: _submitting
+                ? null
+                : () => setState(() => _showDetails = !_showDetails),
+            icon: Icon(
+              _showDetails
+                  ? Icons.visibility_off_rounded
+                  : Icons.visibility_rounded,
+            ),
             tooltip: _showDetails ? 'Hide details' : 'Reveal details',
           ),
         ],
@@ -176,7 +193,9 @@ class _RehearsalScreenState extends State<RehearsalScreen> {
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(18),
                     child: ConstrainedBox(
-                      constraints: BoxConstraints(minHeight: constraints.maxHeight - 156),
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight - 156,
+                      ),
                       child: Center(
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 720),
@@ -211,7 +230,8 @@ class _RehearsalScreenState extends State<RehearsalScreen> {
                           child: SizedBox(
                             width: double.infinity,
                             child: FilledButton.icon(
-                              onPressed: () => setState(() => _showDetails = true),
+                              onPressed: () =>
+                                  setState(() => _showDetails = true),
                               icon: const Icon(Icons.visibility_rounded),
                               label: const Text('Reveal details'),
                             ),

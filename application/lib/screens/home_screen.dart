@@ -6,10 +6,7 @@ import 'rehearsal_screen.dart';
 class HomeScreen extends StatefulWidget {
   final ApiService apiService;
 
-  const HomeScreen({
-    super.key,
-    required this.apiService,
-  });
+  const HomeScreen({super.key, required this.apiService});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -40,13 +37,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showSnack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _startRehearsal() async {
     setState(() => _loading = true);
     try {
-      final words = await widget.apiService.getRehearsalWords(page: 0, size: 10);
+      final words = await widget.apiService.getRehearsalWords(
+        page: 0,
+        size: 10,
+      );
       if (!mounted) return;
 
       if (words.isEmpty) {
@@ -57,7 +59,8 @@ class _HomeScreenState extends State<HomeScreen> {
       await Navigator.push<void>(
         context,
         MaterialPageRoute(
-          builder: (_) => RehearsalScreen(words: words, apiService: widget.apiService),
+          builder: (_) =>
+              RehearsalScreen(words: words, apiService: widget.apiService),
         ),
       );
 
@@ -74,7 +77,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final targetReviews = _dueCount < 10 ? 10 : _dueCount;
-    final reviewProgress = targetReviews == 0 ? 0.0 : (_dueCount / targetReviews).clamp(0.0, 1.0);
+    final reviewProgress = targetReviews == 0
+        ? 0.0
+        : (_dueCount / targetReviews).clamp(0.0, 1.0).toDouble();
 
     return Scaffold(
       appBar: AppBar(
@@ -107,7 +112,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   runSpacing: 12,
                   children: [
                     _MetricCard(
-                      width: compact ? constraints.maxWidth : (constraints.maxWidth - 24) / 3,
+                      width: compact
+                          ? constraints.maxWidth
+                          : (constraints.maxWidth - 24) / 3,
                       icon: Icons.today_rounded,
                       title: 'Today',
                       value: '$_dueCount',
@@ -115,7 +122,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: colorScheme.primary,
                     ),
                     _MetricCard(
-                      width: compact ? constraints.maxWidth : (constraints.maxWidth - 24) / 3,
+                      width: compact
+                          ? constraints.maxWidth
+                          : (constraints.maxWidth - 24) / 3,
                       icon: Icons.track_changes_rounded,
                       title: 'Retention',
                       value: _dueCount == 0 ? '100%' : '86%',
@@ -123,7 +132,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: const Color(0xFF0F766E),
                     ),
                     _MetricCard(
-                      width: compact ? constraints.maxWidth : (constraints.maxWidth - 24) / 3,
+                      width: compact
+                          ? constraints.maxWidth
+                          : (constraints.maxWidth - 24) / 3,
                       icon: Icons.auto_graph_rounded,
                       title: 'Pace',
                       value: targetReviews.toString(),
@@ -170,20 +181,30 @@ class _HeroDashboardCard extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final compact = constraints.maxWidth < 520;
-            final ring = _ProgressRing(progress: progress, label: loading ? '...' : '$dueCount');
+            final ring = _ProgressRing(
+              progress: progress,
+              label: loading ? '...' : '$dueCount',
+            );
             final content = Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Ready for review', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'Ready for review',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 8),
                 Text(
                   loading ? 'Syncing your queue' : '$dueCount words due today',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 Text(
                   'Recall first, reveal second, then grade honestly. The scheduler will handle the spacing.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 18),
                 FilledButton.icon(
@@ -223,10 +244,7 @@ class _ProgressRing extends StatelessWidget {
   final double progress;
   final String label;
 
-  const _ProgressRing({
-    required this.progress,
-    required this.label,
-  });
+  const _ProgressRing({required this.progress, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -245,7 +263,9 @@ class _ProgressRing extends StatelessWidget {
           Center(
             child: Text(
               label,
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w900),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w900),
             ),
           ),
         ],
@@ -279,7 +299,9 @@ class _MetricCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -296,7 +318,11 @@ class _MetricCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-                    Text(value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900)),
+                    Text(
+                      value,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w900),
+                    ),
                     Text(caption, maxLines: 1, overflow: TextOverflow.ellipsis),
                   ],
                 ),
@@ -333,7 +359,10 @@ class _ProgressBars extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Learning mix', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Learning mix',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 14),
             ...rows.map((row) {
               return Padding(

@@ -9,10 +9,8 @@ class ApiService {
   final http.Client _client;
   final String baseUrl;
 
-  ApiService({
-    http.Client? client,
-    this.baseUrl = AppConfig.webBase,
-  }) : _client = client ?? http.Client();
+  ApiService({http.Client? client, this.baseUrl = AppConfig.webBase})
+    : _client = client ?? http.Client();
 
   factory ApiService.configured({http.Client? client}) {
     return ApiService(client: client, baseUrl: AppConfig.baseUrl);
@@ -24,25 +22,25 @@ class ApiService {
     return int.tryParse(response.body.trim()) ?? 0;
   }
 
-  Future<List<VocabWord>> getRehearsalWords({int page = 0, int size = 10}) async {
-    final uri = Uri.parse('$baseUrl/rehearse').replace(
-      queryParameters: {
-        'page': '$page',
-        'size': '$size',
-      },
-    );
+  Future<List<VocabWord>> getRehearsalWords({
+    int page = 0,
+    int size = 10,
+  }) async {
+    final uri = Uri.parse(
+      '$baseUrl/rehearse',
+    ).replace(queryParameters: {'page': '$page', 'size': '$size'});
     final response = await _client.get(uri);
     _ensureSuccess(response, 'Failed to load rehearsal words');
-    return _decodeWordList(response.body);
+    return _decodeWordList(response.body, onlyPreparedForExam: true);
   }
 
   Future<List<VocabWord>> searchWords(String query) async {
     final trimmedQuery = query.trim();
     if (trimmedQuery.isEmpty) return const [];
 
-    final uri = Uri.parse('$baseUrl/search').replace(
-      queryParameters: {'query': trimmedQuery},
-    );
+    final uri = Uri.parse(
+      '$baseUrl/search',
+    ).replace(queryParameters: {'query': trimmedQuery});
     final response = await _client.get(uri);
     _ensureSuccess(response, 'Search failed');
     return _decodeWordList(response.body);
@@ -58,7 +56,10 @@ class ApiService {
     _ensureSuccess(response, 'Submit grade failed');
   }
 
-  List<VocabWord> _decodeWordList(String body) {
+  List<VocabWord> _decodeWordList(
+    String body, {
+    bool onlyPreparedForExam = false,
+  }) {
     final decoded = json.decode(body);
     final Iterable<dynamic> rawItems = switch (decoded) {
       {'content': final List<dynamic> content} => content,
@@ -70,6 +71,7 @@ class ApiService {
     return rawItems
         .whereType<Map>()
         .map((item) => VocabWord.fromJson(Map<String, dynamic>.from(item)))
+        .where((word) => !onlyPreparedForExam || word.hasValidExamples)
         .toList(growable: false);
   }
 
